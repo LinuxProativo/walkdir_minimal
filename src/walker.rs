@@ -126,7 +126,7 @@ impl Iterator for WalkDir {
                                     let dev = md.dev();
                                     let ino = md.ino();
                                     if self.visited.contains(&(dev, ino)) {
-                                        continue;
+                                        return Some(Err(WalkError::LoopDetected(path)));
                                     } else {
                                         self.visited.insert((dev, ino));
                                     }
