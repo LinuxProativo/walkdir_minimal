@@ -174,7 +174,8 @@ fn walkdir_follow_symlinks_no_loop_detection() {
     symlink(&dir_a, dir_b.join("link_to_a")).unwrap();
     symlink(&dir_b, dir_a.join("link_to_b")).unwrap();
 
-    let walker = WalkDir::new(&tmp).unwrap()
+    let walker = WalkDir::new(&tmp)
+        .unwrap()
         .follow_links(true)
         .detect_loops(false)
         .max_depth(5);
