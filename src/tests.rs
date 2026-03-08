@@ -1,9 +1,9 @@
 use super::*;
+use std::env;
 use std::fs::{self, File};
 use std::io::Write;
 use std::os::unix::fs::symlink;
 use std::path::PathBuf;
-use std::env;
 
 fn create_temp_dir(name: &str) -> PathBuf {
     let tmp = env::temp_dir().join(name);
@@ -22,7 +22,8 @@ fn walkdir_filter_works() {
     File::create(tmp.join("a/file1.txt")).unwrap();
     File::create(tmp.join("b_ignore/file2.txt")).unwrap();
 
-    let walker = WalkDir::new(&tmp).unwrap()
+    let walker = WalkDir::new(&tmp)
+        .unwrap()
         .filter_entry(|e| !e.path().to_string_lossy().contains("ignore"));
 
     let mut files = Vec::new();
@@ -47,7 +48,8 @@ fn walkdir_follow_symlinks() {
     let link_path = tmp.join("link_to_target");
     symlink(tmp.join("target"), &link_path).unwrap();
 
-    let walker = WalkDir::new(&tmp).unwrap()
+    let walker = WalkDir::new(&tmp)
+        .unwrap()
         .follow_links(true)
         .detect_loops(false);
 
@@ -71,18 +73,28 @@ fn walkdir_loop_detection() {
 
     symlink(tmp.join("a"), tmp.join("a/b/link_back")).unwrap();
 
-    let walker = WalkDir::new(&tmp).unwrap()
+    let walker = WalkDir::new(&tmp)
+        .unwrap()
         .follow_links(true)
         .detect_loops(true);
 
     let mut visited = 0;
+    let mut loop_detected = false;
     for entry in walker {
-        let e = entry.unwrap();
-        println!("visited: {}", e.path().display());
+        if let Err(WalkError::LoopDetected(_)) = entry {
+            println!("Loop detected");
+            loop_detected = true;
+            break;
+        }
+        println!("visited {}", entry.unwrap().path().display());
         visited += 1;
     }
 
     assert!(visited < 10);
+    assert!(
+        loop_detected,
+        "Deveria ter detectado um loop infinito de links simbólicos"
+    );
 }
 
 #[test]
@@ -90,21 +102,12 @@ fn walkdir_handles_large_dir() {
     println!("\nHandle Large Dir:");
 
     let tmp = create_temp_dir("walkdir_minimal_large");
-    fs::create_dir_all(&tmp).unwrap();
-
     for i in 0..50 {
         let mut f = File::create(tmp.join(format!("file_{i}.txt"))).unwrap();
         writeln!(f, "conteúdo {i}").unwrap();
     }
 
-    let walker = WalkDir::new(&tmp).unwrap();
-
-    let mut count = 0;
-    for entry in walker {
-        let _ = entry.unwrap();
-        count += 1;
-    }
-
+    let count = WalkDir::new(&tmp).unwrap().count();
     println!("Found {} files", count);
     assert_eq!(count, 50);
 }
