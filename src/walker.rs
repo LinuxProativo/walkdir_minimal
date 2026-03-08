@@ -111,7 +111,18 @@ impl Iterator for WalkDir {
                 Some(Ok(dirent)) => {
                     let path = dirent.path();
                     let depth = top.depth + 1;
-                    let entry = Entry::new(path.clone(), depth);
+
+                    let ft = match dirent.file_type() {
+                        Ok(ft) => ft,
+                        Err(e) => {
+                            if self.opts.ignore_errors {
+                                continue;
+                            }
+                            return Some(Err(WalkError::Io(e)));
+                        }
+                    };
+
+                    let entry = Entry::with_ft(path.clone(), depth, ft);
 
                     if let Some(ref f) = self.filter {
                         if !f(&entry) {
@@ -122,7 +133,7 @@ impl Iterator for WalkDir {
                     let is_dir_res = if self.opts.follow_links {
                         fs::metadata(&path).map(|m| m.is_dir())
                     } else {
-                        fs::symlink_metadata(&path).map(|m| m.is_dir())
+                        Ok(ft.is_dir())
                     };
 
                     return match is_dir_res {
