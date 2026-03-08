@@ -1,10 +1,10 @@
 use std::collections::HashSet;
 use std::fs::{self, ReadDir};
+use std::io;
 use std::os::unix::fs::MetadataExt;
 use std::path::{Path, PathBuf};
-use std::io;
 
-use crate::{Entry, WalkOptions, WalkError};
+use crate::{Entry, WalkError, WalkOptions};
 
 struct StackEntry {
     read_dir: ReadDir,
@@ -55,6 +55,11 @@ impl WalkDir {
         self
     }
 
+    pub fn ignore_errors(mut self, ignore: bool) -> Self {
+        self.opts.ignore_errors = ignore;
+        self
+    }
+
     pub fn filter_entry<F>(mut self, f: F) -> Self
     where
         F: Fn(&Entry) -> bool + 'static,
@@ -74,9 +79,7 @@ impl Iterator for WalkDir {
                 let e = Entry::new(self.root.clone(), 0);
                 if self.opts.follow_links && self.detect_loops {
                     if let Ok(md) = e.metadata() {
-                        let dev = md.dev();
-                        let ino = md.ino();
-                        self.visited.insert((dev, ino));
+                        self.visited.insert((md.dev(), md.ino()));
                     }
                 }
                 return Some(Ok(e));
@@ -89,13 +92,16 @@ impl Iterator for WalkDir {
                         });
                         if self.detect_loops {
                             if let Ok(md) = fs::metadata(&self.root) {
-                                let dev = md.dev();
-                                let ino = md.ino();
-                                self.visited.insert((dev, ino));
+                                self.visited.insert((md.dev(), md.ino()));
                             }
                         }
                     }
-                    Err(e) => return Some(Err(WalkError::Io(e))),
+                    Err(e) => {
+                        if self.opts.ignore_errors {
+                            return None;
+                        }
+                        return Some(Err(WalkError::Io(e)));
+                    }
                 }
             }
         }
@@ -123,22 +129,28 @@ impl Iterator for WalkDir {
                         Ok(true) => {
                             if self.opts.follow_links && self.detect_loops {
                                 if let Ok(md) = fs::metadata(&path) {
-                                    let dev = md.dev();
-                                    let ino = md.ino();
-                                    if self.visited.contains(&(dev, ino)) {
+                                    let id = (md.dev(), md.ino());
+                                    if self.visited.contains(&id) {
+                                        if self.opts.ignore_errors {
+                                            continue;
+                                        }
                                         return Some(Err(WalkError::LoopDetected(path)));
-                                    } else {
-                                        self.visited.insert((dev, ino));
                                     }
+                                    self.visited.insert(id);
                                 }
                             }
                             if depth <= self.opts.max_depth {
                                 match fs::read_dir(&path) {
                                     Ok(rd) => {
-                                        self.stack.push(StackEntry { read_dir: rd, depth });
+                                        self.stack.push(StackEntry {
+                                            read_dir: rd,
+                                            depth,
+                                        });
                                     }
                                     Err(e) => {
-                                        return Some(Err(WalkError::Io(e)));
+                                        if !self.opts.ignore_errors {
+                                            return Some(Err(WalkError::Io(e)));
+                                        }
                                     }
                                 }
                             }
@@ -146,11 +158,17 @@ impl Iterator for WalkDir {
                         }
                         Ok(false) => Some(Ok(entry)),
                         Err(e) => {
+                            if self.opts.ignore_errors {
+                                continue;
+                            }
                             Some(Err(WalkError::Io(e)))
                         }
                     };
                 }
                 Some(Err(e)) => {
+                    if self.opts.ignore_errors {
+                        continue;
+                    }
                     return Some(Err(WalkError::Io(e)));
                 }
                 None => {
