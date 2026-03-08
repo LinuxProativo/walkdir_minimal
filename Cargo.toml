@@ -1,13 +1,13 @@
 [package]
 name = "walkdir_minimal"
-version = "1.0.1"
+version = "1.1.0"
 edition = "2024"
-description = "Minimal, dependency-free POSIX-focused directory walker in 100% Rust"
+description = "Fast, minimalist, and POSIX-compliant recursive directory traverser with zero external dependencies."
 license = "MIT"
 authors = ["mxnt <m10ferrari1200@gmail.com>"]
 documentation = "https://docs.rs/walkdir_minimal/"
-homepage = "https://github.com/LinuxDicasPro/walkdir_minimal"
-repository = "https://github.com/LinuxDicasPro/walkdir_minimal"
+homepage = "https://github.com/LinuxProativo/walkdir_minimal"
+repository = "https://github.com/LinuxProativo/walkdir_minimal"
 readme = "README.md"
-keywords = ["directory", "recursive", "walk", "iterator"]
+keywords = ["directory", "recursive", "walkdir", "walk", "iterator"]
 categories = ["filesystem"]

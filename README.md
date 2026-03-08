@@ -1,14 +1,22 @@
 <p align="center">
-  <img src="logo.png" width="256">
+  <img src="logo.png" width="300">
 </p>
 
-<h2 align="center">
-walkdir_minimal - a lightweight, POSIX-only directory walker written in 100% safe Rust
-</h2> 
+<h1 align="center">WalkDir Minimal - A lightweight, POSIX-only directory walker</h1> 
+<h3 align="center">A minimal, 100% safe Rust directory walker for POSIX systems that prioritizes determinism and zero dependencies.</h3>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Platform-POSIX-FCC624?&logo=linux&style=flat-square" alt="Platform">
+  <a href="https://github.com/LinuxProativo/ALPack/actions/workflows/rust.yml" style="text-decoration:none;"><img src="https://img.shields.io/github/actions/workflow/status/LinuxProativo/walkdir_minimal/rust.yml?label=Test&style=flat-square&logo=github" alt="Build Status"></a>
+  <img src="https://img.shields.io/badge/RustC-1.85+-orange?style=flat-square&logo=rust" alt="MSRV">
+  <img src="https://img.shields.io/github/languages/code-size/LinuxProativo/walkdir_minimal?style=flat-square&logo=rust&label=Code Size" alt="Code Size">
+</p>
+
+## 🔍 Overview
 
 `walkdir_minimal` is a **lightweight, POSIX-only directory walker** written in 
 **100% safe Rust**, designed for **maximum portability**, **robust error handling**,
-and **predictable iteration order** across UNIX-like systems (Linux, BSDs, Solaris).
+and **predictable iteration order** across UNIX-like systems.
 
 Unlike the popular [`walkdir`](https://crates.io/crates/walkdir) crate, which
 offers extensive configurability and Windows support, `walkdir_minimal` aims to
@@ -172,7 +180,7 @@ detected (only if loop detection is enabled).
 
 ## 🔍 Technical Details
 
-### Core Design
+### 📌 Core Design
 
 `walkdir_minimal` implements a depth-first directory traversal without relying on
 any external dependencies, using only POSIX APIs available through Rust’s standard
@@ -188,7 +196,7 @@ pruning of the traversal tree dynamically.
 * **Error resilience:** Each I/O operation is wrapped in `Result`, and errors
 are surfaced as `WalkError` variants (`Io`, `LoopDetected`).
 
-### Error Handling Philosophy
+### 📌 Error Handling Philosophy
 
 `walkdir_minimal` follows a **fail-soft** philosophy:
 
@@ -199,7 +207,7 @@ allowing iteration to continue with the next entry.
 
 This mirrors `walkdir`’s behavior but keeps it predictable and minimal.
 
-### Metadata Access
+### 📌 Metadata Access
 
 `Entry` deliberately does **not** cache metadata by default. This ensures:
 
@@ -215,7 +223,7 @@ if let Ok(meta) = entry.metadata() {
 }
 ```
 
-### Platform Scope
+### 📌 Platform Scope
 
 `walkdir_minimal` targets **POSIX systems only** — this includes:
 
@@ -226,14 +234,14 @@ if let Ok(meta) = entry.metadata() {
 It relies on `MetadataExt` for device/inode access, which is non-portable
 to Windows. No attempt is made to support non-POSIX environments.
 
-### Performance Characteristics
+### 📌 Performance Characteristics
 
 * Single `ReadDir` handle open at a time per stack frame.
 * Minimal heap allocations aside from the stack and visited set.
 * No synchronization primitives — designed for **single-threaded deterministic traversal**.
 * Filtering and loop detection incur negligible overhead for typical file trees.
 
-### Safety & Reliability
+### 📌 Safety & Reliability
 
 * No unsafe code.
 * Uses standard library types exclusively (`HashSet`, `Vec`, `ReadDir`, etc.).
@@ -265,7 +273,7 @@ for entry in iter {
 }
 ```
 
-### Why Choose `walkdir_minimal`?
+## 💡 Why Choose `walkdir_minimal`?
 
 * Ideal for **small binaries**, **system utilities**, and **initramfs tools**.
 * Zero build dependencies (fast compile times).
@@ -332,22 +340,14 @@ walkdir_minimal/
 └── Cargo.toml           # Package metadata
 ```
 
-## 📄 License
+## 📜 MIT License
 
-This project is licensed under the **MIT License**.
-See the [`LICENSE`](./LICENSE) file for full details.
+This repository has scripts that were created to be free software.
+Therefore, they can be distributed and/or modified within the terms of the ***MIT License***.
 
-By contributing to this repository, you agree that your contributions
-will be licensed under the same MIT terms.
+> ### See the [LICENSE](LICENSE) file for details.
 
-## 📄 Changelog
+## 📬 Contact & Support
 
-All notable changes to this project will be documented
-in the [`changelog`](./changelog) file.
-
-## 🧑‍💻 Author
-
-Created and maintained by **LinuxDicasPro**.
-
-If you find this project useful, consider starring the repository or contributing
-feedback to improve it further.
+* 📧 **Email:** [m10ferrari1200@gmail.com](mailto:m10ferrari1200@gmail.com)
+* 📧 **Email:** [contatolinuxdicaspro@gmail.com](mailto:contatolinuxdicaspro@gmail.com)

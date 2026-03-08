@@ -1,4 +1,13 @@
-Sun Nov  9 10:53:15 -03 2025:
-    - update version 1.0.1
-    - first version
-    - options for follow links and max depth
+Sun Mar 08 09:31:54 -03 2026:
+    - Added WalkError::LoopDetected for symbolic link cycle detection.
+    - Optimized performance by reducing metadata syscalls using cached file types.
+    - Added ignore_errors option to the iterator.
+    - Documented all modules and public APIs (Rustdoc).
+    - Updated README.md and Cargo.toml file.
+Sun Nov 09 10:53:15 -03 2025:
+    - Initial version.
+    - Implemented core recursive directory traversal using a manual stack.
+    - Added options for follow_links and max_depth.
+    - Added support for custom entry filtering via closures.
+    - Implemented basic Entry and WalkError structures.
+    - Established 100% Safe Rust and zero-dependency policy.
