@@ -60,7 +60,7 @@ and `HashSet` for visited inode/device pairs (loop detection).
 even for deeply nested trees.
 5. **Minimalism** — the crate is intentionally limited to features that can be
 reasoned about and verified easily.
-6. **Transparency** — the API surfaces raw I/O results instead of silently
+6. **Transparency** — the API surfaces raw I/O result instead of silently
 ignoring or swallowing them.
 
 `walkdir_minimal` embodies **clarity over complexity**. Its goal is not to compete
@@ -69,22 +69,22 @@ of a POSIX-only directory walker.
 
 ## ⚖️ Comparison with `walkdir`
 
-| Feature        | `walkdir`                      | `walkdir_minimal`                     |
-| -------------- | ------------------------------ | ------------------------------------- |
-| Cross-platform | ✅ (Windows, macOS, Linux)     | ❌ POSIX only                         |
-| Dependencies   | Many (e.g., same-file, winapi) | ❌ None                               |
-| Error handling | Complex iterator states        | Simple `Result<Entry, WalkError>`     |
-| Loop detection | Optional, platform-specific    | Deterministic `(dev, ino)` hashing    |
-| Symbolic links | Optional follow                | Optional follow                       |
-| Custom sorting | Supported                      | Not supported (filesystem order only) |
-| Performance    | Optimized for general use      | Optimized for predictability          |
-| Safety         | 100% safe Rust                 | 100% safe Rust                       |
-| Recursion      | Implicit                       | Manual stack                       |
-| Binary size    | Larger                         | Tiny                             |
-| Filter API      | Supported (`filter_entry`)    | Supported                      |
-| Error type       | `walkdir::Error`             | `WalkError`                  |
-| Metadata caching | Yes                          | No (on-demand)             |
-| Thread safety    | Yes                          | No (intentionally minimal) |
+| Feature          | `walkdir`                      | `walkdir_minimal`                     |
+|------------------|--------------------------------|---------------------------------------|
+| Cross-platform   | ✅ (Windows, macOS, Linux)      | ❌ POSIX only                          |
+| Dependencies     | Many (e.g., same-file, winapi) | ❌ None                                |
+| Error handling   | Complex iterator states        | Simple `Result<Entry, WalkError>`     |
+| Loop detection   | Optional, platform-specific    | Deterministic `(dev, ino)` hashing    |
+| Symbolic links   | Optional follow                | Optional follow                       |
+| Custom sorting   | Supported                      | Not supported (filesystem order only) |
+| Performance      | Optimized for general use      | Optimized for predictability          |
+| Safety           | 100% safe Rust                 | 100% safe Rust                        |
+| Recursion        | Implicit                       | Manual stack                          |
+| Binary size      | Larger                         | Tiny                                  |
+| Filter API       | Supported (`filter_entry`)     | Supported                             |
+| Error type       | `walkdir::Error`               | `WalkError`                           |
+| Metadata caching | Yes                            | No (on-demand)                        |
+| Thread safety    | Yes                            | No (intentionally minimal)            |
 
 ## 🦉 Example Usage
 
@@ -170,7 +170,7 @@ detected (only if loop detection is enabled).
 ## ⚙️ Default Behavior Summary
 
 | Case                            | Behavior                                                 |
-| ------------------------------- | -------------------------------------------------------- |
+|---------------------------------|----------------------------------------------------------|
 | **Broken symlink**              | Yields `Err(WalkError::Io)`                              |
 | **Permission denied directory** | Yields `Err(WalkError::Io)` and continues                |
 | **Loop via symlink**            | Yields `Err(WalkError::LoopDetected)` if detection is on |
@@ -237,7 +237,7 @@ to Windows. No attempt is made to support non-POSIX environments.
 ### 📌 Performance Characteristics
 
 * Single `ReadDir` handle open at a time per stack frame.
-* Minimal heap allocations aside from the stack and visited set.
+* Minimal heap allocations aside from the stack and visit a set.
 * No synchronization primitives — designed for **single-threaded deterministic traversal**.
 * Filtering and loop detection incur negligible overhead for typical file trees.
 
@@ -255,7 +255,7 @@ to Windows. No attempt is made to support non-POSIX environments.
 * File packers and dependency scanners.
 * System recovery tools that must run without external crates.
 
-Example: skipping hidden files and following symlinks safely:
+Example: skipping hidden files and the following symlinks safely:
 
 ```rust
 use walkdir_minimal::WalkDir;
@@ -342,7 +342,7 @@ walkdir_minimal/
 
 ## 📜 MIT License
 
-This repository has scripts that were created to be free software.
+This repository has scripts created to be free software.
 Therefore, they can be distributed and/or modified within the terms of the ***MIT License***.
 
 > ### See the [LICENSE](LICENSE) file for details.

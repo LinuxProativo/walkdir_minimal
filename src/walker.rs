@@ -4,13 +4,14 @@
 //! to perform a depth-first search (DFS) through the filesystem. It includes
 //! specialized logic for symbolic link handling and loop prevention.
 
+use crate::entry::Entry;
+use crate::options::WalkOptions;
+use crate::WalkError;
 use std::collections::HashSet;
 use std::fs::{self, ReadDir};
 use std::io;
 use std::os::unix::fs::MetadataExt;
 use std::path::{Path, PathBuf};
-
-use crate::{Entry, WalkError, WalkOptions};
 
 /// Internal state for each directory level in the traversal stack.
 ///

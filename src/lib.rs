@@ -18,23 +18,13 @@ mod error;
 mod options;
 mod walker;
 
-/// Represents a single directory entry found during the walk.
-/// Provides access to the path, depth, and cached file type.
-pub use entry::Entry;
-
 /// Defines the error types that can occur during traversal, 
 /// such as I/O failures or detected symbolic link loops.
 pub use error::WalkError;
-
-/// Configuration structure to customize the behavior of the walker, 
-/// including depth limits and error handling policies.
-pub use options::WalkOptions;
 
 /// The main entry point for the library. An iterator that recursively 
 /// yields directory entries based on the provided configuration.
 pub use walker::WalkDir;
 
-/// Unit tests for the library's functionality, including edge cases like 
-/// broken symlinks and deep directory structures.
 #[cfg(test)]
 mod tests;
