@@ -11,3 +11,4 @@ repository = "https://github.com/LinuxProativo/walkdir_minimal"
 readme = "README.md"
 keywords = ["directory", "recursive", "walkdir", "walk", "iterator"]
 categories = ["filesystem"]
+exclude = ["logo.png"]

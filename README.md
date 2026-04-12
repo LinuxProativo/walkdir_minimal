@@ -1,15 +1,15 @@
 <p align="center">
-  <img src="logo.png" width="300">
+  <img src="https://raw.githubusercontent.com/LinuxProativo/walkdir_minimal/refs/heads/master/logo.png" width="300"/>
 </p>
 
 <h1 align="center">WalkDir Minimal - A lightweight, POSIX-only directory walker</h1> 
 <h3 align="center">A minimal, 100% safe Rust directory walker for POSIX systems that prioritizes determinism and zero dependencies.</h3>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Platform-POSIX-FCC624?&logo=linux&style=flat-square" alt="Platform">
-  <a href="https://github.com/LinuxProativo/ALPack/actions/workflows/rust.yml" style="text-decoration:none;"><img src="https://img.shields.io/github/actions/workflow/status/LinuxProativo/walkdir_minimal/rust.yml?label=Test&style=flat-square&logo=github" alt="Build Status"></a>
-  <img src="https://img.shields.io/badge/RustC-1.85+-orange?style=flat-square&logo=rust" alt="MSRV">
-  <img src="https://img.shields.io/github/languages/code-size/LinuxProativo/walkdir_minimal?style=flat-square&logo=rust&label=Code Size" alt="Code Size">
+  <img src="https://img.shields.io/badge/Platform-POSIX-FCC624?&logo=linux&style=flat-square"/>
+  <img src="https://img.shields.io/github/actions/workflow/status/LinuxProativo/walkdir_minimal/rust.yml?label=Test&style=flat-square&logo=github"/>
+  <img src="https://img.shields.io/badge/RustC-1.85+-orange?style=flat-square&logo=rust"/>
+  <img src="https://img.shields.io/github/languages/code-size/LinuxProativo/walkdir_minimal?style=flat-square&logo=rust&label=Code Size"/>
 </p>
 
 ## 🔍 Overview
