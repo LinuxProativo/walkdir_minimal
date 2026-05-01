@@ -32,6 +32,7 @@ impl Default for WalkOptions {
     /// * `follow_links`: `false` - Does not follow symbolic links to prevent accidental loops.
     /// * `max_depth`: `512` - A conservative limit to prevent stack exhaustion in extremely deep trees.
     /// * `ignore_errors`: `false` - All errors are reported to the user by default for maximum safety.
+    /// * `detect_loops`: `true` - Loop detection is enabled by default to prevent infinite recursion.
     fn default() -> Self {
         Self {
             follow_links: false,
