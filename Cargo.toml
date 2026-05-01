@@ -1,6 +1,6 @@
 [package]
 name = "walkdir_minimal"
-version = "1.1.1"
+version = "1.2.0"
 edition = "2024"
 description = "Fast, minimalist, and POSIX-compliant recursive directory traverser with zero external dependencies."
 license = "MIT"
