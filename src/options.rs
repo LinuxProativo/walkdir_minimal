@@ -14,12 +14,13 @@ pub struct WalkOptions {
     /// Specifies whether the walker should follow symbolic links to directories.
     /// If set to `true`, the walker will recurse into linked directories.
     pub follow_links: bool,
-    /// The maximum number of directory levels to descend.
-    /// A depth of 0 only visits the root path.
+    /// The maximum number of directory levels to descend. A depth of 0 only visits the root path.
     pub max_depth: usize,
     /// If set to `true`, I/O errors and symbolic link loops encountered 
     /// during iteration will be silently skipped.
     pub ignore_errors: bool,
+    /// Toggle for the symbolic link loop detection mechanism.
+    pub detect_loops: bool,
 }
 
 impl Default for WalkOptions {
@@ -36,6 +37,7 @@ impl Default for WalkOptions {
             follow_links: false,
             max_depth: 512,
             ignore_errors: false,
+            detect_loops: true,
         }
     }
 }

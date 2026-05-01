@@ -4,9 +4,9 @@
 //! to perform a depth-first search (DFS) through the filesystem. It includes
 //! specialized logic for symbolic link handling and loop prevention.
 
+use crate::WalkError;
 use crate::entry::Entry;
 use crate::options::WalkOptions;
-use crate::WalkError;
 use std::collections::HashSet;
 use std::fs::{self, ReadDir};
 use std::io;
@@ -38,8 +38,6 @@ pub struct WalkDir {
     stack: Vec<StackEntry>,
     /// An optional user-provided closure to skip specific entries.
     filter: Option<Box<dyn Fn(&Entry) -> bool>>,
-    /// Toggle for the symbolic link loop detection mechanism.
-    detect_loops: bool,
     /// Set of (device ID, inode ID) to identify already visited directories.
     visited: HashSet<(u64, u64)>,
     /// Internal flag to track if the iterator has yielded the root entry.
@@ -67,7 +65,6 @@ impl WalkDir {
             opts: WalkOptions::default(),
             stack: Vec::new(),
             filter: None,
-            detect_loops: true,
             visited: HashSet::new(),
             started: false,
             root_is_file,
@@ -106,7 +103,7 @@ impl WalkDir {
     /// # Returns
     /// The modified `WalkDir` instance.
     pub fn detect_loops(mut self, detect: bool) -> Self {
-        self.detect_loops = detect;
+        self.opts.detect_loops = detect;
         self
     }
 
@@ -162,7 +159,7 @@ impl Iterator for WalkDir {
             if self.root_is_file {
                 let e = Entry::new(self.root.clone(), 0);
                 // Record root in a visited set if loop detection is active
-                if self.opts.follow_links && self.detect_loops {
+                if self.opts.follow_links && self.opts.detect_loops {
                     if let Ok(md) = e.metadata() {
                         self.visited.insert((md.dev(), md.ino()));
                     }
@@ -176,7 +173,7 @@ impl Iterator for WalkDir {
                             read_dir: rd,
                             depth: 0,
                         });
-                        if self.detect_loops {
+                        if self.opts.detect_loops {
                             if let Ok(md) = fs::metadata(&self.root) {
                                 self.visited.insert((md.dev(), md.ino()));
                             }
@@ -229,7 +226,7 @@ impl Iterator for WalkDir {
                     return match is_dir_res {
                         Ok(true) => {
                             // POSIX Loop Detection: uses device and inode IDs
-                            if self.opts.follow_links && self.detect_loops {
+                            if self.opts.follow_links && self.opts.detect_loops {
                                 if let Ok(md) = fs::metadata(&path) {
                                     let id = (md.dev(), md.ino());
                                     if self.visited.contains(&id) {
