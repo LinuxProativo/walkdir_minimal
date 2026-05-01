@@ -14,23 +14,10 @@ use std::{fmt, io, path::PathBuf};
 pub enum WalkError {
     /// A wrapper for standard library I/O errors.
     /// Triggered by permission issues, missing files, or hardware failures.
-    Io(io::Error),
+    Io(io::Error, PathBuf),
     /// Emitted when a symbolic link cycle is detected.
     /// This prevents the walker from entering an infinite recursion.
     LoopDetected(PathBuf),
-}
-
-impl From<io::Error> for WalkError {
-    /// Converts a standard `std::io::Error` into a `WalkError`.
-    ///
-    /// # Arguments
-    /// * `e` - The original I/O error from the standard library.
-    ///
-    /// # Returns
-    /// A `WalkError::Io` variant containing the provided error.
-    fn from(e: io::Error) -> Self {
-        WalkError::Io(e)
-    }
 }
 
 impl fmt::Display for WalkError {
@@ -43,7 +30,7 @@ impl fmt::Display for WalkError {
     /// A fmt::Result indicating success or failure of the write operation.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            WalkError::Io(e) => write!(f, "IO error: {}", e),
+            WalkError::Io(e, p) => write!(f, "IO error in {}: {}", p.display(), e),
             WalkError::LoopDetected(p) => {
                 write!(f, "Symbolic link loop detected at {}", p.display())
             }
