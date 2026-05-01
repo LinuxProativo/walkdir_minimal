@@ -40,10 +40,10 @@ pub struct WalkDir {
     filter: Option<Box<dyn Fn(&Entry) -> bool>>,
     /// Set of (device ID, inode ID) to identify already visited directories.
     visited: HashSet<(u64, u64)>,
-    /// Internal flag to track if the iterator has yielded the root entry.
-    started: bool,
-    /// Tracks if the initial root path is a file rather than a directory.
-    root_is_file: bool,
+    /// Holds the root entry when the root path is a file, yielded on the first call to next().
+    pending_root: Option<Entry>,
+    /// Holds a deferred error from read_dir on the root, resolved in next() based on ignore_errors.
+    pending_error: Option<WalkError>,
 }
 
 impl WalkDir {
@@ -54,20 +54,35 @@ impl WalkDir {
     ///
     /// # Returns
     /// * `io::Result<Self>` - A configured `WalkDir` instance or an I/O error
-    /// if the root metadata is inaccessible.
+    /// if the root path is inaccessible.
     pub fn new(root: impl AsRef<Path>) -> io::Result<Self> {
         let root = root.as_ref().to_path_buf();
         let md = fs::symlink_metadata(&root)?;
-        let root_is_file = md.is_file();
+
+        let (stack, pending_root, pending_error) = if md.is_file() {
+            (vec![], Some(Entry::new(root.clone(), 0)), None)
+        } else {
+            match fs::read_dir(&root) {
+                Ok(rd) => (
+                    vec![StackEntry {
+                        read_dir: rd,
+                        depth: 0,
+                    }],
+                    None,
+                    None,
+                ),
+                Err(e) => (vec![], None, Some(WalkError::Io(e, root.clone()))),
+            }
+        };
 
         Ok(Self {
             root,
             opts: WalkOptions::default(),
-            stack: Vec::new(),
+            stack,
             filter: None,
             visited: HashSet::new(),
-            started: false,
-            root_is_file,
+            pending_root,
+            pending_error,
         })
     }
 
@@ -153,50 +168,27 @@ impl Iterator for WalkDir {
     /// * `Some(Err(WalkError))` - An error encountered (unless `ignore_errors` is true).
     /// * `None` - When the traversal is finished.
     fn next(&mut self) -> Option<Self::Item> {
-        // Initial setup for the first call to next()
-        if !self.started {
-            self.started = true;
-            if self.root_is_file {
-                let e = Entry::new(self.root.clone(), 0);
-                // Record root in a visited set if loop detection is active
-                if self.opts.follow_links && self.opts.detect_loops {
-                    if let Ok(md) = e.metadata() {
-                        self.visited.insert((md.dev(), md.ino()));
-                    }
-                }
-                return Some(Ok(e));
-            } else {
-                // Initialize the stack with the root directory
-                match fs::read_dir(&self.root) {
-                    Ok(rd) => {
-                        self.stack.push(StackEntry {
-                            read_dir: rd,
-                            depth: 0,
-                        });
-                        if self.opts.detect_loops {
-                            if let Ok(md) = fs::metadata(&self.root) {
-                                self.visited.insert((md.dev(), md.ino()));
-                            }
-                        }
-                    }
-                    Err(e) => {
-                        if self.opts.ignore_errors {
-                            return None;
-                        }
-                        return Some(Err(WalkError::Io(e, self.root.clone())));
-                    }
-                }
-            }
+        // If root is a file, yield it once and finish.
+        if let Some(e) = self.pending_root.take() {
+            return Some(Ok(e));
         }
 
-        // Main iteration loop processing the stack
+        // Deliver any deferred error from opening the root directory.
+        if let Some(err) = self.pending_error.take() {
+            if self.opts.ignore_errors {
+                return None;
+            }
+            return Some(Err(err));
+        }
+
+        // Main iteration loop processing the stack.
         while let Some(top) = self.stack.last_mut() {
             match top.read_dir.next() {
                 Some(Ok(dirent)) => {
                     let path = dirent.path();
                     let depth = top.depth + 1;
 
-                    // Efficiently get a file type from dirent (minimal syscalls)
+                    // Efficiently get file type from dirent (minimal syscalls).
                     let ft = match dirent.file_type() {
                         Ok(ft) => ft,
                         Err(e) => {
@@ -209,14 +201,14 @@ impl Iterator for WalkDir {
 
                     let entry = Entry::with_ft(path.clone(), depth, ft);
 
-                    // Apply user-defined filter
+                    // Apply user-defined filter.
                     if let Some(ref f) = self.filter {
                         if !f(&entry) {
                             continue;
                         }
                     }
 
-                    // Determine if we should treat this as a directory (follow links or not)
+                    // Determine if we should treat this as a directory (follow links or not).
                     let is_dir_res = if self.opts.follow_links {
                         fs::metadata(&path).map(|m| m.is_dir())
                     } else {
@@ -225,7 +217,7 @@ impl Iterator for WalkDir {
 
                     return match is_dir_res {
                         Ok(true) => {
-                            // POSIX Loop Detection: uses device and inode IDs
+                            // POSIX loop detection: uses device and inode IDs.
                             if self.opts.follow_links && self.opts.detect_loops {
                                 if let Ok(md) = fs::metadata(&path) {
                                     let id = (md.dev(), md.ino());
@@ -238,7 +230,7 @@ impl Iterator for WalkDir {
                                     self.visited.insert(id);
                                 }
                             }
-                            // Push new directory to stack if within depth limits
+                            // Push new directory to stack if within depth limits.
                             if depth <= self.opts.max_depth {
                                 match fs::read_dir(&path) {
                                     Ok(rd) => {
@@ -272,7 +264,7 @@ impl Iterator for WalkDir {
                     return Some(Err(WalkError::Io(e, self.root.clone())));
                 }
                 None => {
-                    // Directory stream exhausted, pop from stack
+                    // Directory stream exhausted, pop from stack.
                     self.stack.pop();
                     continue;
                 }
