@@ -145,7 +145,7 @@ fn walkdir_ignores_broken_symlinks() {
                 }
             }
             Err(err) => match err {
-                WalkError::Io(io_err) => {
+                WalkError::Io(io_err, ..) => {
                     println!("IO error: {:?}", io_err);
                     found_broken_links += 1;
                 }

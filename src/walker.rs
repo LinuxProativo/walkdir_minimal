@@ -183,7 +183,7 @@ impl Iterator for WalkDir {
                         if self.opts.ignore_errors {
                             return None;
                         }
-                        return Some(Err(WalkError::Io(e)));
+                        return Some(Err(WalkError::Io(e, self.root.clone())));
                     }
                 }
             }
@@ -203,7 +203,7 @@ impl Iterator for WalkDir {
                             if self.opts.ignore_errors {
                                 continue;
                             }
-                            return Some(Err(WalkError::Io(e)));
+                            return Some(Err(WalkError::Io(e, path)));
                         }
                     };
 
@@ -249,7 +249,7 @@ impl Iterator for WalkDir {
                                     }
                                     Err(e) => {
                                         if !self.opts.ignore_errors {
-                                            return Some(Err(WalkError::Io(e)));
+                                            return Some(Err(WalkError::Io(e, path)));
                                         }
                                     }
                                 }
@@ -261,7 +261,7 @@ impl Iterator for WalkDir {
                             if self.opts.ignore_errors {
                                 continue;
                             }
-                            Some(Err(WalkError::Io(e)))
+                            Some(Err(WalkError::Io(e, path)))
                         }
                     };
                 }
@@ -269,7 +269,7 @@ impl Iterator for WalkDir {
                     if self.opts.ignore_errors {
                         continue;
                     }
-                    return Some(Err(WalkError::Io(e)));
+                    return Some(Err(WalkError::Io(e, self.root.clone())));
                 }
                 None => {
                     // Directory stream exhausted, pop from stack
