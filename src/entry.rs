@@ -1,4 +1,4 @@
-//! Configuration options for the directory walker.
+//! Filesystem entry representation for the directory walker.
 //!
 //! This module defines the [`Entry`] struct, which represents a single filesystem
 //! node discovered during traversal. It is designed to provide efficient access
