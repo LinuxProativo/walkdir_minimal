@@ -1,6 +1,12 @@
-Fri May  1 16:58:24 -03 2026:
-    - Deferred read_dir and error handling to next() via pending_root and pending_error, keeping new() minimal and
-      respecting ignore_errors at iteration time.
+Sun May 31 12:00:00 -03 2026:
+    - Added ignore_permission_denied option to silently skip EACCES errors
+      without suppressing other I/O errors (unlike ignore_errors).
+    - Fixed read_dir failure on subdirectories to defer the error via
+      pending_error, ensuring the directory entry itself is always yielded
+      before its associated error is surfaced.
+Fri May 01 16:58:24 -03 2026:
+    - Deferred read_dir and error handling to next() via pending_root and pending_error, keeping new()
+     minimal and respecting ignore_errors at iteration time.
     - Removed unused From implementation from WalkError.
     - WalkError::Io now carries the offending PathBuf alongside the io::Error for actionable debug context.
     - Corrected the //! header in entry.rs which mistakenly described WalkOptions instead of Entry.

@@ -14,7 +14,7 @@
 
 ## 🔍 Overview
 
-`walkdir_minimal` is a **lightweight, POSIX-only directory walker** written in 
+`walkdir_minimal` is a **lightweight, POSIX-only directory walker** written in
 **100% safe Rust**, designed for **maximum portability**, **robust error handling**,
 and **predictable iteration order** across UNIX-like systems.
 
@@ -27,23 +27,26 @@ buffering, no non-POSIX extensions.
 ## ✨ Key Features
 
 * 🧱 **POSIX-only**: Works on Linux, FreeBSD, OpenBSD, NetBSD, and Solaris.
-* ⚙️ **No dependencies**: Implemented using only `std::fs`, `std::path`, and 
-minimal data structures.
-* 🦦 **Lightweight and predictable**: The walker uses a manual stack (no recursion), 
-allowing predictable memory and performance behavior.
+* ⚙️ **No dependencies**: Implemented using only `std::fs`, `std::path`, and
+  minimal data structures.
+* 🦦 **Lightweight and predictable**: The walker uses a manual stack (no recursion),
+  allowing predictable memory and performance behavior.
 * 🦉 **Configurable options** via `WalkOptions`:
-  * `follow_links`: whether to follow symbolic links to directories.
-  * `max_depth`: optional limit on traversal depth.
+    * `follow_links`: whether to follow symbolic links to directories.
+    * `max_depth`: optional limit on traversal depth.
+    * `ignore_errors`: silently skip all I/O errors and detected loops.
+    * `ignore_permission_denied`: silently skip `EACCES` errors without suppressing other I/O errors.
+    * `detect_loops`: detect and prevent infinite loops caused by symbolic link cycles.
 
-* 🧠 **Cycle detection**: Detects and prevents infinite loops caused by symbolic 
-links that form cycles.
-* 🚫 **Graceful handling of I/O errors**: Broken symlinks, permission-denied 
-directories, and other errors are returned as `Err(WalkError::Io)`.
+* 🧠 **Cycle detection**: Detects and prevents infinite loops caused by symbolic
+  links that form cycles.
+* 🚫 **Graceful handling of I/O errors**: Broken symlinks, permission-denied
+  directories, and other errors are returned as `Err(WalkError::Io)`.
 * 🦦 **Filtering**: Supports entry-level filtering with a user-provided closure.
-* 🧫 **Deterministic**: The order of traversal follows the order provided by the 
-filesystem’s `readdir(3)` implementation — consistent across runs on the same system.
-* 🧪 **Minimal yet robust**: Designed for projects that require reliable, 
-low-level control rather than high-level abstraction.
+* 🧫 **Deterministic**: The order of traversal follows the order provided by the
+  filesystem's `readdir(3)` implementation — consistent across runs on the same system.
+* 🧪 **Minimal yet robust**: Designed for projects that require reliable,
+  low-level control rather than high-level abstraction.
 
 
 ## 🪶 Design Philosophy
@@ -51,17 +54,17 @@ low-level control rather than high-level abstraction.
 `walkdir_minimal` is built under the following principles:
 
 1. **POSIX compliance first** — all filesystem operations map directly to their POSIX
-equivalents (`lstat`, `stat`, `opendir`, `readdir`, etc., via Rust’s `std::fs`).
+   equivalents (`lstat`, `stat`, `opendir`, `readdir`, etc., via Rust's `std::fs`).
 2. **Deterministic behavior** — the iterator never hides errors, skips entries
-silently, or spawns threads.
-3. **No allocations beyond what’s necessary** — uses `Vec` for the manual stack
-and `HashSet` for visited inode/device pairs (loop detection).
+   silently, or spawns threads.
+3. **No allocations beyond what's necessary** — uses `Vec` for the manual stack
+   and `HashSet` for visited inode/device pairs (loop detection).
 4. **No recursion** — prevents stack overflows and maintains stable memory usage
-even for deeply nested trees.
+   even for deeply nested trees.
 5. **Minimalism** — the crate is intentionally limited to features that can be
-reasoned about and verified easily.
-6. **Transparency** — the API surfaces raw I/O result instead of silently
-ignoring or swallowing them.
+   reasoned about and verified easily.
+6. **Transparency** — the API surfaces raw I/O results instead of silently
+   ignoring or swallowing them.
 
 `walkdir_minimal` embodies **clarity over complexity**. Its goal is not to compete
 with feature-rich crates, but to provide a **clean reference implementation**
@@ -69,22 +72,23 @@ of a POSIX-only directory walker.
 
 ## ⚖️ Comparison with `walkdir`
 
-| Feature          | `walkdir`                      | `walkdir_minimal`                     |
-|------------------|--------------------------------|---------------------------------------|
-| Cross-platform   | ✅ (Windows, macOS, Linux)      | ❌ POSIX only                          |
-| Dependencies     | Many (e.g., same-file, winapi) | ❌ None                                |
-| Error handling   | Complex iterator states        | Simple `Result<Entry, WalkError>`     |
-| Loop detection   | Optional, platform-specific    | Deterministic `(dev, ino)` hashing    |
-| Symbolic links   | Optional follow                | Optional follow                       |
-| Custom sorting   | Supported                      | Not supported (filesystem order only) |
-| Performance      | Optimized for general use      | Optimized for predictability          |
-| Safety           | 100% safe Rust                 | 100% safe Rust                        |
-| Recursion        | Implicit                       | Manual stack                          |
-| Binary size      | Larger                         | Tiny                                  |
-| Filter API       | Supported (`filter_entry`)     | Supported                             |
-| Error type       | `walkdir::Error`               | `WalkError`                           |
-| Metadata caching | Yes                            | No (on-demand)                        |
-| Thread safety    | Yes                            | No (intentionally minimal)            |
+| Feature                    | `walkdir`                      | `walkdir_minimal`                     |
+|----------------------------|--------------------------------|---------------------------------------|
+| Cross-platform             | ✅ (Windows, macOS, Linux)      | ❌ POSIX only                          |
+| Dependencies               | Many (e.g., same-file, winapi) | ❌ None                                |
+| Error handling             | Complex iterator states        | Simple `Result<Entry, WalkError>`     |
+| Loop detection             | Optional, platform-specific    | Deterministic `(dev, ino)` hashing    |
+| Symbolic links             | Optional follow                | Optional follow                       |
+| Custom sorting             | Supported                      | Not supported (filesystem order only) |
+| Performance                | Optimized for general use      | Optimized for predictability          |
+| Safety                     | 100% safe Rust                 | 100% safe Rust                        |
+| Recursion                  | Implicit                       | Manual stack                          |
+| Binary size                | Larger                         | Tiny                                  |
+| Filter API                 | Supported (`filter_entry`)     | Supported                             |
+| Error type                 | `walkdir::Error`               | `WalkError`                           |
+| Metadata caching           | Yes                            | No (on-demand)                        |
+| Thread safety              | Yes                            | No (intentionally minimal)            |
+| `ignore_permission_denied` | No                             | Yes                                   |
 
 ## 🦉 Example Usage
 
@@ -118,16 +122,29 @@ Output example:
 ```rust
 #[derive(Clone, Debug)]
 pub struct WalkOptions {
+    /// Follow symbolic links to directories during traversal.
     pub follow_links: bool,
+    /// Maximum number of directory levels to descend (root is depth 0).
     pub max_depth: usize,
+    /// Silently skip all I/O errors and detected symlink loops.
+    pub ignore_errors: bool,
+    /// Silently skip EACCES errors without suppressing other I/O errors.
+    pub ignore_permission_denied: bool,
+    /// Detect and prevent infinite loops caused by symbolic link cycles.
+    pub detect_loops: bool,
 }
 ```
 
 * **`follow_links`** — When `true`, symbolic links to directories are followed.
-* **`max_depth`** — Optional limit to recursion depth. `None` means unlimited.
-
-  * The root is always depth `0`.
-  * Files or subdirectories at one level below are depth `1`, and so on.
+* **`max_depth`** — Limits recursion depth. The root is always depth `0`; direct
+  children are depth `1`, and so on. Defaults to `512`.
+* **`ignore_errors`** — When `true`, all I/O errors and detected symlink loops are
+  silently skipped instead of being surfaced as `Err` items.
+* **`ignore_permission_denied`** — When `true`, only `EACCES` errors are silently
+  skipped; all other I/O errors are still surfaced normally. Takes no effect when
+  `ignore_errors` is already `true`.
+* **`detect_loops`** — When `true`, tracks visited `(dev, ino)` pairs to prevent
+  infinite recursion through cyclic symlinks. Enabled by default.
 
 ## 🔗 Entry API
 
@@ -154,58 +171,65 @@ impl Entry {
 
 ```rust
 pub enum WalkError {
-    Io(io::Error),
+    Io(io::Error, PathBuf),
     LoopDetected(PathBuf),
 }
 ```
 
-* **`Io(io::Error)`** — Covers all I/O-related errors, including:
+* **`Io(io::Error, PathBuf)`** — Covers all I/O-related errors, carrying the
+  offending path alongside the error for actionable debug context. Includes:
 
-  * Broken symbolic links (`ENOENT`)
-  * Permission-denied directories (`EACCES`)
-  * Filesystem read errors
-* **`LoopDetected(PathBuf)`** — Reported when a cyclic symbolic link is 
-detected (only if loop detection is enabled).
+    * Broken symbolic links (`ENOENT`)
+    * Permission-denied directories (`EACCES`)
+    * Filesystem read errors
+
+* **`LoopDetected(PathBuf)`** — Reported when a cyclic symbolic link is
+  detected (only if loop detection is enabled).
 
 ## ⚙️ Default Behavior Summary
 
-| Case                            | Behavior                                                 |
-|---------------------------------|----------------------------------------------------------|
-| **Broken symlink**              | Yields `Err(WalkError::Io)`                              |
-| **Permission denied directory** | Yields `Err(WalkError::Io)` and continues                |
-| **Loop via symlink**            | Yields `Err(WalkError::LoopDetected)` if detection is on |
-| **Regular file as root**        | Returns file directly, no traversal                      |
-| **Unreadable entry**            | Returns `Err(WalkError::Io)`                             |
-| **Exceeds `max_depth`**         | Skips entry silently (depth-guarded)                     |
+| Case                            | Behavior                                                      |
+|---------------------------------|---------------------------------------------------------------|
+| **Broken symlink**              | Yields `Err(WalkError::Io)`                                   |
+| **Permission denied directory** | Yields the entry, then `Err(WalkError::Io)` on the next step |
+| **Loop via symlink**            | Yields `Err(WalkError::LoopDetected)` if detection is on      |
+| **Regular file as root**        | Returns file directly, no traversal                           |
+| **Unreadable entry**            | Returns `Err(WalkError::Io)`                                  |
+| **Exceeds `max_depth`**         | Skips entry silently (depth-guarded)                          |
+| **`ignore_permission_denied`**  | Skips `EACCES` silently; other errors still surface           |
 
 ## 🔍 Technical Details
 
 ### 📌 Core Design
 
 `walkdir_minimal` implements a depth-first directory traversal without relying on
-any external dependencies, using only POSIX APIs available through Rust’s standard
+any external dependencies, using only POSIX APIs available through Rust's standard
 library. The iterator is built around a manual stack-based traversal that mimics
 recursion, avoiding stack overflows for deeply nested directories.
 
 * **Stack-based iteration:** Uses an internal vector of `StackEntry` structs,
-each holding an active `ReadDir` handle and its depth.
+  each holding an active `ReadDir` handle and its depth.
 * **Loop detection:** Uses a `HashSet<(dev, ino)>` to detect and skip cyclic
-symlinks, preventing infinite recursion.
+  symlinks, preventing infinite recursion.
 * **Filter callbacks:** Optional user-provided closures (`filter_entry`) allow
-pruning of the traversal tree dynamically.
+  pruning of the traversal tree dynamically.
 * **Error resilience:** Each I/O operation is wrapped in `Result`, and errors
-are surfaced as `WalkError` variants (`Io`, `LoopDetected`).
+  are surfaced as `WalkError` variants (`Io`, `LoopDetected`).
 
 ### 📌 Error Handling Philosophy
 
 `walkdir_minimal` follows a **fail-soft** philosophy:
 
 * Broken symlinks are returned as `Ok(Entry)` unless metadata is explicitly requested.
-* Directories without permission to read (`EACCES`) return an `Err(WalkError::Io)`,
-allowing iteration to continue with the next entry.
+* Directories without permission to read (`EACCES`) yield the directory entry first,
+  then surface an `Err(WalkError::Io)` on the following iteration — so the caller
+  always sees the entry before its associated error.
 * Files disappearing mid-iteration yield `Err(WalkError::Io)` gracefully.
+* When `ignore_permission_denied` is set, `EACCES` errors are silently dropped
+  without affecting other error types — unlike `ignore_errors`, which suppresses
+  everything including symlink loops.
 
-This mirrors `walkdir`’s behavior but keeps it predictable and minimal.
+This mirrors `walkdir`'s behavior but keeps it predictable and minimal.
 
 ### 📌 Metadata Access
 
@@ -214,7 +238,7 @@ This mirrors `walkdir`’s behavior but keeps it predictable and minimal.
 * Minimal memory overhead.
 * Consistent behavior with file system changes.
 * Full control for users who may wish to query `metadata()` or
-`symlink_metadata()` selectively.
+  `symlink_metadata()` selectively.
 
 ```rust
 let entry = Entry::new(path, depth);
@@ -237,7 +261,7 @@ to Windows. No attempt is made to support non-POSIX environments.
 ### 📌 Performance Characteristics
 
 * Single `ReadDir` handle open at a time per stack frame.
-* Minimal heap allocations aside from the stack and visit a set.
+* Minimal heap allocations aside from the stack and visited set.
 * No synchronization primitives — designed for **single-threaded deterministic traversal**.
 * Filtering and loop detection incur negligible overhead for typical file trees.
 
@@ -255,7 +279,7 @@ to Windows. No attempt is made to support non-POSIX environments.
 * File packers and dependency scanners.
 * System recovery tools that must run without external crates.
 
-Example: skipping hidden files and the following symlinks safely:
+Example: skipping hidden files and following symlinks safely:
 
 ```rust
 use walkdir_minimal::WalkDir;
@@ -266,6 +290,19 @@ let iter = WalkDir::new("/usr")
     .filter_entry(|e| !e.path().file_name().map(|n| n.to_string_lossy().starts_with('.')).unwrap_or(false));
 
 for entry in iter {
+    match entry {
+        Ok(e) => println!("{}", e.path().display()),
+        Err(err) => eprintln!("Error: {}", err),
+    }
+}
+```
+
+Example: walking a directory tree while silently skipping inaccessible paths:
+
+```rust
+use walkdir_minimal::WalkDir;
+
+for entry in WalkDir::new("/etc").unwrap().ignore_permission_denied(true) {
     match entry {
         Ok(e) => println!("{}", e.path().display()),
         Err(err) => eprintln!("Error: {}", err),
@@ -286,11 +323,14 @@ for entry in iter {
 * When `follow_links` is disabled, symlink loops are naturally impossible.
 * `max_depth` limits traversal, excluding deeper entries.
 * The iterator yields entries as soon as they are discovered — no preloading
-or buffering.
+  or buffering.
+* A directory entry is always yielded before any error associated with opening
+  it — this ensures callers can distinguish between "entry exists but is inaccessible"
+  and a hard filesystem failure.
 
 ## 🤝 Contributing
 
-Contributions are very welcome! Whether it’s fixing a bug, improving
+Contributions are very welcome! Whether it's fixing a bug, improving
 documentation, or adding new features that align with the minimalist and
 POSIX-only philosophy, your input is appreciated.
 
