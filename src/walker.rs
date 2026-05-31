@@ -134,6 +134,18 @@ impl WalkDir {
         self
     }
 
+    /// Enables or disables skipping entries that cannot be accessed due to permission restrictions.
+    ///
+    /// # Arguments
+    /// * `ignore` - If `true`, permission denied errors will be silently ignored.
+    ///
+    /// # Returns
+    /// The modified `WalkDir` instance for method chaining.
+    pub fn ignore_permission_denied(mut self, ignore: bool) -> Self {
+        self.opts.ignore_permission_denied = ignore;
+        self
+    }
+
     /// Registers a filter function to prune the search tree.
     ///
     /// # Arguments
@@ -270,7 +282,6 @@ impl Iterator for WalkDir {
                 }
             }
         }
-
         None
     }
 }
