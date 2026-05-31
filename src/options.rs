@@ -21,6 +21,9 @@ pub struct WalkOptions {
     pub ignore_errors: bool,
     /// Toggle for the symbolic link loop detection mechanism.
     pub detect_loops: bool,
+    /// If set to `true`, directories and files that cannot be accessed due to
+    /// permission restrictions (EACCES) will be skipped instead of causing an error.
+    pub ignore_permission_denied: bool,
 }
 
 impl Default for WalkOptions {
@@ -39,6 +42,7 @@ impl Default for WalkOptions {
             max_depth: 512,
             ignore_errors: false,
             detect_loops: true,
+            ignore_permission_denied: false,
         }
     }
 }
