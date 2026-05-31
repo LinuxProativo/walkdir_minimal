@@ -42,7 +42,12 @@ pub struct WalkDir {
     visited: HashSet<(u64, u64)>,
     /// Holds the root entry when the root path is a file, yielded on the first call to next().
     pending_root: Option<Entry>,
-    /// Holds a deferred error from read_dir on the root, resolved in next() based on ignore_errors.
+    /// Holds a deferred error to be emitted on the next call to next().
+    ///
+    /// Used in two situations:
+    /// - A `read_dir` failure on a subdirectory: the directory entry itself is
+    ///   yielded first, then this error is surfaced on the following iteration.
+    /// - A `read_dir` failure on the root directory, resolved before the main loop.
     pending_error: Option<WalkError>,
 }
 
@@ -185,10 +190,26 @@ impl Iterator for WalkDir {
             return Some(Ok(e));
         }
 
-        // Deliver any deferred error from opening the root directory.
+        // Deliver any deferred error (root open failure, or subdirectory open
+        // failure from the previous iteration). Checked here so the directory
+        // entry itself is always yielded before its associated error.
         if let Some(err) = self.pending_error.take() {
             if self.opts.ignore_errors {
-                return None;
+                return if self.stack.is_empty() {
+                    None
+                } else {
+                    self.next()
+                };
+            }
+            if let WalkError::Io(ref e, _) = err {
+                if self.opts.ignore_permission_denied && e.kind() == io::ErrorKind::PermissionDenied
+                {
+                    return if self.stack.is_empty() {
+                        None
+                    } else {
+                        self.next()
+                    };
+                }
             }
             return Some(Err(err));
         }
@@ -204,7 +225,10 @@ impl Iterator for WalkDir {
                     let ft = match dirent.file_type() {
                         Ok(ft) => ft,
                         Err(e) => {
-                            if self.opts.ignore_errors {
+                            if self.opts.ignore_errors
+                                || (self.opts.ignore_permission_denied
+                                    && e.kind() == io::ErrorKind::PermissionDenied)
+                            {
                                 continue;
                             }
                             return Some(Err(WalkError::Io(e, path)));
@@ -242,7 +266,9 @@ impl Iterator for WalkDir {
                                     self.visited.insert(id);
                                 }
                             }
-                            // Push new directory to stack if within depth limits.
+                            // Try to open the directory. On failure, stash the error in
+                            // `pending_error` so the directory entry itself is yielded
+                            // first and the error surfaces on the next call to next().
                             if depth <= self.opts.max_depth {
                                 match fs::read_dir(&path) {
                                     Ok(rd) => {
@@ -252,9 +278,7 @@ impl Iterator for WalkDir {
                                         });
                                     }
                                     Err(e) => {
-                                        if !self.opts.ignore_errors {
-                                            return Some(Err(WalkError::Io(e, path)));
-                                        }
+                                        self.pending_error = Some(WalkError::Io(e, path));
                                     }
                                 }
                             }
@@ -262,7 +286,10 @@ impl Iterator for WalkDir {
                         }
                         Ok(false) => Some(Ok(entry)),
                         Err(e) => {
-                            if self.opts.ignore_errors {
+                            if self.opts.ignore_errors
+                                || (self.opts.ignore_permission_denied
+                                    && e.kind() == io::ErrorKind::PermissionDenied)
+                            {
                                 continue;
                             }
                             Some(Err(WalkError::Io(e, path)))
@@ -270,7 +297,10 @@ impl Iterator for WalkDir {
                     };
                 }
                 Some(Err(e)) => {
-                    if self.opts.ignore_errors {
+                    if self.opts.ignore_errors
+                        || (self.opts.ignore_permission_denied
+                            && e.kind() == io::ErrorKind::PermissionDenied)
+                    {
                         continue;
                     }
                     return Some(Err(WalkError::Io(e, self.root.clone())));
