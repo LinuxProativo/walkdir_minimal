@@ -2,7 +2,7 @@ use super::*;
 use std::env;
 use std::fs::{self, File};
 use std::io::Write;
-use std::os::unix::fs::symlink;
+use std::os::unix::fs::{PermissionsExt, symlink};
 use std::path::PathBuf;
 
 fn create_temp_dir(name: &str) -> PathBuf {
@@ -10,6 +10,123 @@ fn create_temp_dir(name: &str) -> PathBuf {
     let _ = fs::remove_dir_all(&tmp);
     fs::create_dir_all(&tmp).unwrap();
     tmp
+}
+
+struct PermGuard {
+    locked_path: PathBuf,
+    original_mode: u32,
+    root: PathBuf,
+}
+
+impl PermGuard {
+    fn new(locked_path: PathBuf, restricted_mode: u32, root: PathBuf) -> Self {
+        let original_mode = fs::metadata(&locked_path)
+            .expect("failed to read metadata before restricting permissions")
+            .permissions()
+            .mode();
+
+        fs::set_permissions(&locked_path, fs::Permissions::from_mode(restricted_mode))
+            .expect("failed to set restricted permissions");
+
+        Self {
+            locked_path,
+            original_mode,
+            root,
+        }
+    }
+}
+
+impl Drop for PermGuard {
+    fn drop(&mut self) {
+        let _ = fs::set_permissions(
+            &self.locked_path,
+            fs::Permissions::from_mode(self.original_mode),
+        );
+        let _ = fs::remove_dir_all(&self.root);
+    }
+}
+
+#[test]
+fn test_ignore_permission_denied_on_locked_subdir() {
+    let root = create_temp_dir("walkdir_test_permission_denied");
+
+    fs::write(root.join("accessible.txt"), b"ok").expect("failed to create accessible.txt");
+
+    let locked = root.join("locked");
+    fs::create_dir(&locked).expect("failed to create locked dir");
+    fs::write(locked.join("secret.txt"), b"secret").expect("failed to create secret.txt");
+
+    let _guard = PermGuard::new(locked.clone(), 0o000, root.clone());
+
+    {
+        let results: Vec<_> = WalkDir::new(&root)
+            .expect("failed to create walker")
+            .ignore_permission_denied(false)
+            .collect();
+
+        let errors: Vec<_> = results.iter().filter(|r| r.is_err()).collect();
+        let entries: Vec<_> = results.iter().filter_map(|r| r.as_ref().ok()).collect();
+
+        println!("ignore_permission_denied false");
+        println!("{:#?}", errors);
+
+        assert_eq!(
+            errors.len(),
+            1,
+            "expected exactly one error, got: {errors:?}"
+        );
+        match errors[0].as_ref().unwrap_err() {
+            WalkError::Io(io_err, path) => {
+                assert_eq!(
+                    io_err.kind(),
+                    std::io::ErrorKind::PermissionDenied,
+                    "expected PermissionDenied, got {io_err}"
+                );
+                assert_eq!(
+                    path, &locked,
+                    "error path should point to the locked directory"
+                );
+            }
+            other => panic!("unexpected error variant: {other:?}"),
+        }
+
+        let names: Vec<_> = entries
+            .iter()
+            .map(|e| e.path().file_name().unwrap().to_string_lossy().into_owned())
+            .collect();
+        assert!(names.contains(&"accessible.txt".to_string()));
+        assert!(names.contains(&"locked".to_string()));
+        assert!(
+            !names.contains(&"secret.txt".to_string()),
+            "secret.txt should not be reachable"
+        );
+    }
+
+    {
+        let results: Vec<_> = WalkDir::new(&root)
+            .expect("failed to create walker")
+            .ignore_permission_denied(true)
+            .collect();
+
+        let errors: Vec<_> = results.iter().filter(|r| r.is_err()).collect();
+        assert!(errors.is_empty(), "expected no errors, got: {errors:?}");
+
+        println!("ignore_permission_denied true");
+        println!("{:#?}", errors);
+
+        let names: Vec<_> = results
+            .iter()
+            .filter_map(|r| r.as_ref().ok())
+            .map(|e| e.path().file_name().unwrap().to_string_lossy().into_owned())
+            .collect();
+
+        assert!(names.contains(&"accessible.txt".to_string()));
+        assert!(names.contains(&"locked".to_string()));
+        assert!(
+            !names.contains(&"secret.txt".to_string()),
+            "secret.txt should not be reachable"
+        );
+    }
 }
 
 #[test]
@@ -187,5 +304,8 @@ fn walkdir_follow_symlinks_no_loop_detection() {
         count += 1;
     }
 
-    assert!(count > 2, "Expected to visit multiple paths when following symbolic links");
+    assert!(
+        count > 2,
+        "Expected to visit multiple paths when following symbolic links"
+    );
 }
